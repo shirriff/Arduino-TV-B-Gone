@@ -3,11 +3,23 @@ TV-B-Gone for Arduino version 0.001
 Ported to Arduino by Ken Shirriff, Dec 3, 2009
 http://arcfn.com
 
+
+PLEASE CHOOSE NA OR EU DATABASE IN "main.h" BEFORE USING THIS CODE
+
+
 The original code is:
 TV-B-Gone Firmware version 1.2
  for use with ATtiny85v and v1.2 hardware
  (c) Mitch Altman + Limor Fried 2009
  Last edits, August 16 2009
+
+
+ I added universality for EU or NA,
+ and Sleep mode to Ken's Arduino port
+      -- Mitch Altman  18-Oct-2010
+ Thanks to ka1kjz for the code for adding Sleep
+      <http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/>
+
 
  With some code from:
  Kevin Timmerman & Damien Good 7-Dec-07
@@ -19,6 +31,7 @@ TV-B-Gone Firmware version 1.2
  */
 
 #include "main.h"
+#include <avr/sleep.h>
 
 void xmitCodeElement(uint16_t ontime, uint16_t offtime, uint8_t PWM_code );
 void flashslowLEDx( uint8_t num_blinks );
@@ -189,8 +202,10 @@ void setup()   {
 
   digitalWrite(LED, LOW);
   digitalWrite(IRLED, LOW);
+  digitalWrite(DBG, LOW);     // debug
   pinMode(LED, OUTPUT);
   pinMode(IRLED, OUTPUT);
+  pinMode(DBG, OUTPUT);       // debug
   pinMode(REGIONSWITCH, INPUT);
   pinMode(TRIGGER, INPUT);
   digitalWrite(REGIONSWITCH, HIGH); //Pull-up
@@ -208,8 +223,15 @@ void setup()   {
     DEBUGP(putstring_nl("EU"));
   }
 
-  // Tell the user what region we're in  - 3 is US 4 is EU
-  quickflashLEDx(3+region);
+  // Tell the user what region we're in  - 3 is US 6 is EU
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  quickflashLEDx(3);
+  if (region == EU) {
+    quickflashLEDx(3);
+  }
 
   // Indicate how big our database is
   DEBUGP(putstring("\n\rNA Codesize: ");
@@ -328,7 +350,7 @@ void sendAllCodes() {
 
     //Flush remaining bits, so that next code starts
     //with a fresh set of 8 bits.
-    bitsleft_r=0;	
+    bitsleft_r=0;
 
     // delay 250 milliseconds before transmitting next POWER code
     //delay_ten_us(25000);
@@ -336,19 +358,27 @@ void sendAllCodes() {
 
     // visible indication that a code has been output.
     quickflashLED();
+
+    // see if the user is pushing the button,
+    // indicating that we should quit the transmission sequence
+    if (digitalRead(TRIGGER)==0) {
+      break;
+    }
+
   }
   while (Loop == 1);
 
-  // flash the visible LED on PB0  4 times to indicate that we're done
+  // flash the visible LED on PB0  8 times to indicate that we're done
   delay_ten_us(65500); // wait maxtime
   delay_ten_us(65500); // wait maxtime
-  quickflashLEDx(4);
+  quickflashLEDx(8);
 
 }
 
 void loop() {
   if (digitalRead(TRIGGER) == 0) {
     sendAllCodes();
+    sleepNow();
   }
 }
 
@@ -396,4 +426,29 @@ void quickflashLEDx( uint8_t x ) {
 
 
 
+/****************************** SLEEP and WAKE FUNCTIONS ********/
+// from kaqkjz:
+// http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/
 
+void sleepNow()
+{
+  set_sleep_mode(TRIGGER);                    // sleep mode is set here
+
+  sleep_enable();                             // enables the sleep bit in the mcucr register
+
+  attachInterrupt(0, wakeUpNow, LOW);         // use interrupt 0 (pin 2) and run function
+  // wakeUpNow when pin 2 gets LOW
+
+  sleep_mode();                               // here the device is actually put to sleep!!
+  // THE PROGRAM CONTINUES FROM HERE ON WAKE
+
+  sleep_disable();                            // first thing after waking, disable sleep
+
+  detachInterrupt(0);                         // disables int 0 as the wakeupnow code will
+                                              // not be executed during normal runtime
+}
+
+void wakeUpNow()
+{
+  // any needed wakeup code can be placed here
+}
