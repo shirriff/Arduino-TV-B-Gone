@@ -376,9 +376,9 @@ void sendAllCodes() {
 }
 
 void loop() {
+  sleepNow();
   if (digitalRead(TRIGGER) == 0) {
     sendAllCodes();
-    sleepNow();
   }
 }
 
