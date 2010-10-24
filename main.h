@@ -5,20 +5,9 @@
 //   either the EU or the NA database of POWER CODES
 // EU is for Europe, Middle East, Australia, New Zealand, and some countries in Africa and South America
 // NA is for North America, Asia, and the rest of the world not covered by EU
-//
-// To set up for EU:
-//     comment out the "define" statement for NA_CODES
-//     make sure the define for US is 0 and the define for EU is 1
-//
-// To set up for NA:
-//     comment out the "define" statement for EU_CODES
-//     make sure the define for US is 1 and the define for EU is 0
-
-#define EU_CODES
-//define NA_CODES
 
 // Two regions!
-#define US 0
+#define NA 0
 #define EU 1
 
 // What pins do what

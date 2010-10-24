@@ -8,17 +8,12 @@ TV-B-Gone Firmware version 1.2
  for use with ATtiny85v and v1.2 hardware
  (c) Mitch Altman + Limor Fried 2009
 
-
- I fixed up these databases so that we can use either EU or NA,
- merely by changing the defines at the top of "main.h"
-      -- Mitch Altman   18-Oct-2010
 */
 #include "main.h"
 
 //Codes captured from Generation 3 TV-B-Gone by Limor Fried & Mitch Altman
 // table of POWER codes
 
-#ifdef NA_CODES
 const uint16_t code_na000Times[] PROGMEM = {
   60, 60,
   60, 2700,
@@ -3679,7 +3674,6 @@ const struct IrCode code_na114Code PROGMEM = {
   code_na114Codes
 };
 
-#ifndef EU_CODES
 
 const uint16_t code_na115Times[] PROGMEM = {
   81, 86,
@@ -4448,180 +4442,7 @@ const struct IrCode code_na136Code PROGMEM = {
   code_na136Times,
   code_na136Codes
 };
-#endif
-#endif
 
-
-#ifdef EU_CODES
-
-#ifndef NA_CODES
-
-const uint16_t code_na000Times[] PROGMEM = {
-  60, 60,
-  60, 2700,
-  120, 60,
-  240, 60,
-};
-const uint8_t code_na000Codes[] PROGMEM = {
-  0xE2,
-  0x20,
-  0x80,
-  0x78,
-  0x88,
-  0x20,
-  0x10,
-};
-const struct IrCode code_na000Code PROGMEM = {
-  freq_to_timerval(38400),
-  26,             // # of pairs
-  2,              // # of bits per index
-  code_na000Times,
-  code_na000Codes
-};
-
-const uint16_t code_na004Times[] PROGMEM = {
-  55, 57,
-  55, 170,
-  55, 3949,
-  55, 9623,
-  56, 0,
-  898, 453,
-  900, 226,
-};
-const uint8_t code_na004Codes[] PROGMEM = {
-  0xA0,
-  0x00,
-  0x01,
-  0x04,
-  0x92,
-  0x48,
-  0x20,
-  0x80,
-  0x40,
-  0x04,
-  0x12,
-  0x09,
-  0x2B,
-  0x3D,
-  0x00,
-};
-const struct IrCode code_na004Code PROGMEM = {
-  freq_to_timerval(38610),
-  38,		// # of pairs
-  3,		// # of bits per index
-  code_na004Times,
-  code_na004Codes
-};
-
-const uint16_t code_na005Times[] PROGMEM = {
-  88, 90,
-  88, 91,
-  88, 181,
-  88, 8976,
-  177, 91,
-};
-const uint8_t code_na005Codes[] PROGMEM = {
-  0x10,
-  0x92,
-  0x49,
-  0x46,
-  0x33,
-  0x09,
-  0x24,
-  0x94,
-  0x60,
-};
-const struct IrCode code_na005Code PROGMEM = {
-  freq_to_timerval(35714),
-  24,		// # of pairs
-  3,		// # of bits per index
-  code_na005Times,
-  code_na005Codes
-};
-
-const uint16_t code_na009Times[] PROGMEM = {
-  53, 56,
-  53, 171,
-  53, 3950,
-  53, 9599,
-  898, 451,
-  900, 226,
-};
-
-const uint16_t code_na021Times[] PROGMEM = {
-  48, 52,
-  48, 160,
-  48, 400,
-  48, 2335,
-  799, 400,
-};
-const uint8_t code_na021Codes[] PROGMEM = {
-  0x80,
-  0x10,
-  0x40,
-  0x08,
-  0x82,
-  0x08,
-  0x01,
-  0xC0,
-  0x08,
-  0x20,
-  0x04,
-  0x41,
-  0x04,
-  0x00,
-  0x00,
-};
-const struct IrCode code_na021Code PROGMEM = {
-  freq_to_timerval(38462),
-  38,		// # of pairs
-  3,		// # of bits per index
-  code_na021Times,
-  code_na021Codes
-};
-
-const uint16_t code_na022Times[] PROGMEM = {
-  53, 60,
-  53, 175,
-  53, 4463,
-  53, 9453,
-  892, 450,
-  895, 225,
-};
-const uint8_t code_na022Codes[] PROGMEM = {
-  0x80,
-  0x02,
-  0x40,
-  0x00,
-  0x02,
-  0x40,
-  0x00,
-  0x00,
-  0x01,
-  0x24,
-  0x92,
-  0x48,
-  0x0A,
-  0xBA,
-  0x00,
-};
-const struct IrCode code_na022Code PROGMEM = {
-  freq_to_timerval(38462),
-  38,		// # of pairs
-  3,		// # of bits per index
-  code_na022Times,
-  code_na022Codes
-};
-
-const uint16_t code_na031Times[] PROGMEM = {
-  88, 89,
-  88, 90,
-  88, 179,
-  88, 8977,
-  177, 90,
-};
-
-#endif
 
 
 
@@ -7943,7 +7764,6 @@ const struct IrCode code_eu114Code PROGMEM = {
   code_eu114Codes
 };
 
-#ifndef NA_CODES
 
 const uint16_t code_eu115Times[] PROGMEM = {
   48, 98,
@@ -8679,14 +8499,11 @@ const struct IrCode code_eu139Code PROGMEM = {
   code_eu139Codes
 };
 
-#endif
-#endif
 
 ////////////////////////////////////////////////////////////////
 
 
 const struct IrCode *NApowerCodes[] PROGMEM = {
-#ifdef NA_CODES
   &code_na000Code,
   &code_na001Code,
   &code_na002Code,
@@ -8802,7 +8619,6 @@ const struct IrCode *NApowerCodes[] PROGMEM = {
   &code_na112Code,
   &code_na113Code,
   &code_na114Code,
-#ifndef EU_CODES
   &code_na115Code,
   &code_na116Code,
   &code_na117Code,
@@ -8825,12 +8641,9 @@ const struct IrCode *NApowerCodes[] PROGMEM = {
   &code_na134Code,
   &code_na135Code,
   &code_na136Code,
-#endif
-#endif
 };
 
 const struct IrCode *EUpowerCodes[] PROGMEM = {
-#ifdef EU_CODES
   &code_eu000Code,
   &code_eu001Code,
   &code_eu002Code,
@@ -8946,7 +8759,6 @@ const struct IrCode *EUpowerCodes[] PROGMEM = {
   &code_eu112Code,
   &code_eu113Code,
   &code_eu114Code,
-#ifndef NA_CODES
   &code_eu115Code,
   &code_eu116Code,
   &code_eu117Code,
@@ -8972,8 +8784,6 @@ const struct IrCode *EUpowerCodes[] PROGMEM = {
   &code_eu137Code,
   &code_eu138Code,
   &code_eu139Code,
-#endif
-#endif
 };
 
 uint8_t num_NAcodes = NUM_ELEM(NApowerCodes);

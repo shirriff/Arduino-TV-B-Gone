@@ -1,11 +1,13 @@
 /*
-TV-B-Gone for Arduino version 0.001
-Ported to Arduino by Ken Shirriff, Dec 3, 2009
-http://arcfn.com
+TV-B-Gone for Arduino version 1.2, Oct 23 2010
+Ported to Arduino by Ken Shirriff=
+http://www.arcfn.com/2009/12/tv-b-gone-for-arduino.html
 
-
-PLEASE CHOOSE NA OR EU DATABASE IN "main.h" BEFORE USING THIS CODE
-
+The hardware for this project uses an Arduino:
+ Connect an IR LED to pin 3 (RLED).
+ Connect a visible LED to pin 13 (or use builtin LED in some Arduinos).
+ Connect a pushbutton between pin 2 (TRIGGER) and ground.
+ Pin 5 (REGIONSWITCH) is floating for North America, or wired to ground for Europe.
 
 The original code is:
 TV-B-Gone Firmware version 1.2
@@ -26,17 +28,13 @@ TV-B-Gone Firmware version 1.2
 
  Distributed under Creative Commons 2.5 -- Attib & Share Alike
 
- This is the 'universal' code designed for v1.2 - it will select EU or NA
- depending on a pulldown resistor on pin B1 !
  */
 
 #include "main.h"
 #include <avr/sleep.h>
 
 void xmitCodeElement(uint16_t ontime, uint16_t offtime, uint8_t PWM_code );
-void flashslowLEDx( uint8_t num_blinks );
 void quickflashLEDx( uint8_t x );
-void tvbgone_sleep( void );
 void delay_ten_us(uint16_t us);
 void quickflashLED( void );
 uint8_t read_bits(uint8_t count);
@@ -76,17 +74,6 @@ This project transmits a bunch of TV POWER codes, one right after the other,
 /*
 This project is a good example of how to use the AVR chip timers.
  */
-
-
-/*
-The hardware for this project uses an Arduino:
- Connect an IR LED to pin 3.
- Connect a visible LED to pin 13 (or use builtin LED in some Arduinos).
- Connect a pushbutton between pin 1 and ground.
- Pin 0 is floating for North America, or wired to ground for Europe.
- */
-
-
 
 extern PGM_P *NApowerCodes[] PROGMEM;
 extern PGM_P *EUpowerCodes[] PROGMEM;
@@ -191,8 +178,8 @@ The C compiler creates code that will transfer all constants into RAM when
  */
 
 uint16_t ontime, offtime;
-uint8_t i,j, Loop;
-uint8_t region = US;     // by default our code is U
+uint8_t i,num_codes, Loop;
+uint8_t region;
 
 void setup()   {
   Serial.begin(9600);
@@ -215,22 +202,12 @@ void setup()   {
 
   // determine region
   if (digitalRead(REGIONSWITCH)) {
-    region = US; // US
-    DEBUGP(putstring_nl("US"));
+    region = NA;
+    DEBUGP(putstring_nl("NA"));
   }
   else {
     region = EU;
     DEBUGP(putstring_nl("EU"));
-  }
-
-  // Tell the user what region we're in  - 3 is US 6 is EU
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  quickflashLEDx(3);
-  if (region == EU) {
-    quickflashLEDx(3);
   }
 
   // Indicate how big our database is
@@ -240,27 +217,39 @@ void setup()   {
   DEBUGP(putstring("\n\rEU Codesize: ");
   putnum_ud(num_EUcodes);
   );
+
+  // Tell the user what region we're in  - 3 flashes is NA, 6 is EU
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  delay_ten_us(65500); // wait maxtime
+  quickflashLEDx(3);
+  if (region == EU) {
+    quickflashLEDx(3);
+  }
 }
 
 void sendAllCodes() {
-  // We may have different number of codes in either database
-  if (region == US) {
-    j = num_NAcodes;
+  // determine region from REGIONSWITCH: 1 = NA, 0 = EU
+  if (digitalRead(REGIONSWITCH)) {
+    region = NA;
+    num_codes = num_NAcodes;
   }
   else {
-    j = num_EUcodes;
+    region = EU;
+    num_codes = num_EUcodes;
   }
 
   // for every POWER code in our collection
-  for (i=0 ; i < j; i++) {
-   PGM_P data_ptr;
+  for (i=0 ; i < num_codes; i++) {
+    PGM_P data_ptr;
 
     // print out the code # we are about to transmit
     DEBUGP(putstring("\n\r\n\rCode #: ");
     putnum_ud(i));
 
     // point to next POWER code, from the right database
-    if (region == US) {
+    if (region == NA) {
       data_ptr = (PGM_P)pgm_read_word(NApowerCodes+i);
     }
     else {
@@ -352,19 +341,11 @@ void sendAllCodes() {
     //with a fresh set of 8 bits.
     bitsleft_r=0;
 
-    // delay 250 milliseconds before transmitting next POWER code
-    //delay_ten_us(25000);
-    delay_ten_us(10000);
+    // delay 205 milliseconds before transmitting next POWER code
+    delay_ten_us(20500);
 
     // visible indication that a code has been output.
     quickflashLED();
-
-    // see if the user is pushing the button,
-    // indicating that we should quit the transmission sequence
-    if (digitalRead(TRIGGER)==0) {
-      break;
-    }
-
   }
   while (Loop == 1);
 
