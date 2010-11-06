@@ -180,6 +180,10 @@ The C compiler creates code that will transfer all constants into RAM when
 uint16_t ontime, offtime;
 uint8_t i,num_codes, Loop;
 uint8_t region;
+uint8_t startOver;
+
+#define FALSE 0
+#define TRUE 1
 
 void setup()   {
   Serial.begin(9600);
@@ -230,6 +234,10 @@ void setup()   {
 }
 
 void sendAllCodes() {
+Start_transmission:
+  // startOver will become TRUE if the user pushes the Trigger button while transmitting the sequence of all codes
+  startOver = FALSE;
+
   // determine region from REGIONSWITCH: 1 = NA, 0 = EU
   if (digitalRead(REGIONSWITCH)) {
     region = NA;
@@ -346,7 +354,15 @@ void sendAllCodes() {
 
     // visible indication that a code has been output.
     quickflashLED();
+
+    // if user is pushing Trigger button, stop transmission
+    if (digitalRead(TRIGGER) == 0) {
+      startOver = TRUE;
+      break;
+    }
   }
+
+  if (startOver) goto Start_transmission;
   while (Loop == 1);
 
   // flash the visible LED on PB0  8 times to indicate that we're done
@@ -358,8 +374,12 @@ void sendAllCodes() {
 
 void loop() {
   sleepNow();
+  // if the user pushes the Trigger button and lets go, then start transmission of all POWER codes
   if (digitalRead(TRIGGER) == 0) {
-    sendAllCodes();
+    delay_ten_us(3000);  // delay 30ms
+    if (digitalRead(TRIGGER) == 1) {
+      sendAllCodes();
+    }
   }
 }
 

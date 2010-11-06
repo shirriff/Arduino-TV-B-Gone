@@ -7,8 +7,8 @@
 // NA is for North America, Asia, and the rest of the world not covered by EU
 
 // Two regions!
-#define NA 0
-#define EU 1
+#define NA 1
+#define EU 0
 
 // What pins do what
 #define DBG 12
