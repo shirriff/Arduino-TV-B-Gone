@@ -9,10 +9,11 @@ TV-B-Gone Firmware version 1.2
  (c) Mitch Altman + Limor Fried 2009
 
 */
-#include "main.h"
 
 //Codes captured from Generation 3 TV-B-Gone by Limor Fried & Mitch Altman
 // table of POWER codes
+
+#include "main.h"
 
 const uint16_t code_na000Times[] PROGMEM = {
   60, 60,
@@ -8502,8 +8503,8 @@ const struct IrCode code_eu139Code PROGMEM = {
 
 ////////////////////////////////////////////////////////////////
 
-
-const struct IrCode *NApowerCodes[] PROGMEM = {
+//PROGMEM array of const pointers to IrCode structs (I think)
+const struct IrCode * const NApowerCodes[] PROGMEM = {
   &code_na000Code,
   &code_na001Code,
   &code_na002Code,
@@ -8643,7 +8644,7 @@ const struct IrCode *NApowerCodes[] PROGMEM = {
   &code_na136Code,
 };
 
-const struct IrCode *EUpowerCodes[] PROGMEM = {
+const struct IrCode * const EUpowerCodes[] PROGMEM = {
   &code_eu000Code,
   &code_eu001Code,
   &code_eu002Code,

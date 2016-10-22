@@ -1,3 +1,7 @@
+Last Updated: 22 Oct. 2016
+By Gabriel Staples, http://www.ElectricRCAircraftGuy.com 
+-My contact info is available by clicking the "Contact Me" tab at the top of my website.
+
 This code is the TV-B-Gone library ported to run on the Arduino.
 
 This port is by Ken Shirriff.
@@ -27,3 +31,5 @@ TV-B-Gone Firmware version 1.2
  Distributed under Creative Commons 2.5 -- Attib & Share Alike
 
 
+User Manual:
+-When the device is first plugged in, Tell the user what region we're in  - 3 flashes is NA, 6 is EU
