@@ -62,14 +62,14 @@ The hardware for this project uses an Arduino:
   * We'd love to have you add more! Just be careful NOT to duplicate codes please!  
   
 ## Use:  
- * When the device is first powered on, it will quick-flash (30ms on followed by 150ms off) 3 times if set to output NA (North America) codes, or 6 times for EU (European Union) codes. See the end of the "setup()" function.  
+ * When the device is first powered on, it will quick-flash (30ms on-time followed by 250ms off-time) 3 times if set to output NA (North America) codes, or 6 times for EU (European Union) codes. See the end of the "setup()" function.  
  * Once on, the device will enter sleep mode, where it will remain until a button press occurs on the TRIGGER pin, at which point it will wake up and send all of its power codes for the region set according to the state of the REGIONSWITCH pin.  
- * Once you press the TRIGGER button (on pin 2), all power codes will be sent sequentially, one after the other. Note that the trigger button debouncing is done in a very primitive fashion, so quick button presses and releases (<200ms) may work best.  
- * Once all codes have been sent (may take around a minute or so), 8 quick flashes will occur to indicate that all power codes have been sent, then the device will go back into sleep mode until another TRIGGER button press occurs.  
- * Between individual power codes, the TRIGGER button is read one time. If it is read as pressed (LOW), it will restart the power code sequence from the beginning. This will be indicated by a ~705ms delay followed by 4 quick-flashes. Since the TRIGGER button is only read between individual codes, rather than continuously, you may need to hold down the button for a half-second to second or so for it to be read properly as pressed. Once the delay and 4 quick-flashes begin, you can release the button. The power codes will restart. If you hold the button down, it will simply continually restart the power codes, as indicated by the long pause followed by 4 quick-flashes, continuously repeated. 
- * To stop the power code sequence once it is started, you must disconnect power to your device. 
-  * If you'd like a more sophisticated way to stop it, I can add proper button debouncing via my [eRCaGuy_ButtonReader](https://github.com/ElectricRCAircraftGuy/eRCaGuy_ButtonReader) library, then allow pressing the button to restart 
-
+ * Once you press the TRIGGER button (on pin 2), all power codes will be sent sequentially, one after the other. Note that the trigger button debouncing is done in a very primitive fashion, so quick button presses and releases (<500ms) may work best. If you just hold down the button, the code sending sequence will be continually started, stopped, and started again, since a button press during code sending is used to stop the sending sequence.  
+ * After each individual IR power code is sent, a quick flash will occur on the visible LED (30ms on-time) to indicate a code was just sent. Therefore, as the codes are sent, you will see the visible LED flash repeatedly.  
+ * Once all codes have been sent (which takes around 60 sec or so), a ~1.3 sec pause followed by 8 quick flashes will occur to indicate that all power codes have been sent. Then, the device will go back into sleep mode until another TRIGGER button press occurs.  
+ * Between individual power codes, the TRIGGER button is read one time. If it is read as pressed (LOW), the code sending sequence will be stopped early. This will be indicated by a ~705ms delay followed by 4 quick-flashes, followed by another ~1.3 sec delay to give you time to release the button.  
+  * NB: since the TRIGGER button is only read between individual codes, rather than continuously, you may need to hold down the button for a half-second to second or so for it to be read properly as pressed. Once the delay and 4 quick-flashes begin, you can release the button, and the power codes will be stopped. The device will enter back into sleep mode. Press the button again to begin the code sequence again from the beginning.  
+  * NB: If you keep holding the button, however, this will be read as a new button-press in the main loop and the sequence will be restarted. Therefore, continually holding the button will just keep starting and stopping and starting again the sending sequence, repeatedly.  
 
 
 

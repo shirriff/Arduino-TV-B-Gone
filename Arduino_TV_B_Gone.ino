@@ -63,6 +63,8 @@ uint8_t read_bits(uint8_t count);
 #define putnum_ud(n) Serial.print(n, DEC)
 #define putnum_uh(n) Serial.print(n, HEX)
 
+#define MAX_WAIT_TIME 65535 //tens of us (ie: 655.350ms)
+
 /*
 This project transmits a bunch of TV POWER codes, one right after the other,
  with a pause in between each.  (To have a visible indication that it is
@@ -196,16 +198,14 @@ The C compiler creates code that will transfer all constants into RAM when
  const PGM_P time_ptr = (PGM_P)pgm_read_word(code_ptr);
  */
 
-#define FALSE 0
-#define TRUE 1
 #define BUTTON_PRESSED 0 
 
 uint16_t ontime, offtime;
 uint8_t i,num_codes;
 uint8_t region;
-bool startOver = FALSE;
 
-void setup()   {
+void setup()   
+{
   Serial.begin(9600);
 
   TCCR2A = 0;
@@ -218,7 +218,7 @@ void setup()   {
   pinMode(REGIONSWITCH, INPUT_PULLUP);
   pinMode(TRIGGER, INPUT_PULLUP);
 
-  delay_ten_us(5000);            //50ms (5000x10 us) delay: let everything settle for a bit
+  delay_ten_us(5000); //50ms (5000x10 us) delay: let everything settle for a bit
 
   // determine region
   if (digitalRead(REGIONSWITCH)) {
@@ -230,7 +230,7 @@ void setup()   {
     DEBUGP(putstring_nl("EU"));
   }
 
-  // Indicate how big our database is
+  // Debug output: indicate how big our database is
   DEBUGP(putstring("\n\rNA Codesize: ");
   putnum_ud(num_NAcodes);
   );
@@ -239,20 +239,16 @@ void setup()   {
   );
 
   // Tell the user what region we're in  - 3 flashes is NA, 6 is EU
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  
   if (region == NA)
     quickflashLEDx(3);
   else //region == EU
     quickflashLEDx(6);
 }
 
-void sendAllCodes() {
-Start_transmission:
-
+void sendAllCodes() 
+{
+  bool endingEarly = false; //will be set to true if the user presses the button during code-sending 
+      
   // determine region from REGIONSWITCH: 1 = NA, 0 = EU (defined in main.h)
   if (digitalRead(REGIONSWITCH)) {
     region = NA;
@@ -324,7 +320,7 @@ Start_transmission:
     // transmitting offTime means no output from the IR emitters for the
     // length of time specified in offTime
 
-//DEV TESTING: 
+//DEVELOPMENTAL TESTING: 
 #if 0
     // print out all of the pulse pairs
     for (uint8_t k=0; k<numpairs; k++) {
@@ -371,44 +367,37 @@ Start_transmission:
     // delay 205 milliseconds before transmitting next POWER code
     delay_ten_us(20500);
 
-    // if user is pushing (holding down) TRIGGER button, stop transmission & start over at the 1st code again
-    // -if user is holding down the TRIGGER button for an extended period of time, stop the code-sending sequence entirely
+    // if user is pushing (holding down) TRIGGER button, stop transmission early 
     if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
     {
-      if (startOver==TRUE) 
-      {
-        //if startOver was already TRUE, it means the button has been pressed for 2 cycles in a row, so let's stop 
-        startOver = FALSE; //update 
-        break; //exit the POWER code "for" loop
-      }
-      else //startOver==FALSE, so let's start over now 
-      {
-        startOver = TRUE;
-        delay_ten_us(50000); //500ms delay 
-        quickflashLEDx(4);
-        break; //exit the POWER code "for" loop
-      }
+      endingEarly = true;
+      delay_ten_us(50000); //500ms delay 
+      quickflashLEDx(4);
+      //pause for ~1.3 sec to give the user time to release the button so that the code sequence won't immediately start again.
+      delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+      delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+      break; //exit the POWER code "for" loop
     }
   } //end of POWER code for loop
 
-  if (startOver) 
-    goto Start_transmission;
+  if (endingEarly==false)
+  {
+    //pause for ~1.3 sec, then flash the visible LED 8 times to indicate that we're done
+    delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+    delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+    quickflashLEDx(8);
+  }
+} //end of sendAllCodes
 
-  //Otherwise, we are done (either because we were stopped early, or because we finished all the codes)
-  //-so, flash the visible LED 8 times to indicate that we're done
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  quickflashLEDx(8);
-}
-
-void loop() {
+void loop() 
+{
   sleepNow();
   
   //Super "ghetto" (but decent enough for this application) button debouncing:
   //-if the user pushes the Trigger button, then wait a while to let the button stop bouncing, then start transmission of all POWER codes
   if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
   {
-    delay_ten_us(25000);  // delay 250ms
+    delay_ten_us(50000);  // delay 500ms to give the user time to release the button before the code sequence begins
     sendAllCodes();
   }
 }
