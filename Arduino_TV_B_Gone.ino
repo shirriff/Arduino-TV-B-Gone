@@ -1,36 +1,55 @@
 /*
+Last Updated: 22 Oct. 2016
+By Gabriel Staples, http://www.ElectricRCAircraftGuy.com 
+-My contact info is available by clicking the "Contact Me" tab at the top of my website.
+
+------------------------------------------------------------
+Semver (http://semver.org/) VERSION HISTORY (newest on top):
+(date format: yyyymmdd; ex: 20161022 is 22 Oct. 2016)
+------------------------------------------------------------
+-20161022 - v1.3 - Semver versioning implemented; various code updates, clarifications, & comment additions, and changes to fix PROGMEM incompatibilities so it will now compile with latest versions of gcc compiler; also implemented a few new blink indicator routines//////////; by Gabriel Staples (http://www.ElectricRCAircraftGuy.com)
+-20101023 - v1.2 - Latest version posted by Ken Shirriff on his website here (http://www.righto.com/2010/11/improved-arduino-tv-b-gone.html) (direct download link here: http://arcfn.com/files/arduino-tv-b-gone-1.2.zip)
+-20101018 - v1.2 - Universality for EU (European Union) & NA (North America) added by Mitch Altman; sleep mode added by ka1kjz
+-2010____ - v1.2 - code ported to Arduino; by Ken Shirriff 
+-20090816 - v1.2 - for ATtiny85v, by Mitch Altman & Limor Fried (https://www.adafruit.com/), w/some code by Kevin Timmerman & Damien Good  
+
 TV-B-Gone for Arduino version 1.2, Oct 23 2010
-Ported to Arduino by Ken Shirriff=
-http://www.arcfn.com/2009/12/tv-b-gone-for-arduino.html
+Ported to Arduino by Ken Shirriff
+See here: http://www.arcfn.com/2009/12/tv-b-gone-for-arduino.html and here: http://www.righto.com/2010/11/improved-arduino-tv-b-gone.html (newer)
 
-The hardware for this project uses an Arduino:
- Connect an IR LED to pin 3 (RLED).
- Connect a visible LED to pin 13 (or use builtin LED in some Arduinos).
- Connect a pushbutton between pin 2 (TRIGGER) and ground.
- Pin 5 (REGIONSWITCH) is floating for North America, or wired to ground for Europe.
-
+I added universality for EU (European Union) or NA (North America),
+and Sleep mode to Ken's Arduino port
+ -- Mitch Altman  18-Oct-2010
+Thanks to ka1kjz for the code for adding Sleep
+ <http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/>
+ 
 The original code is:
 TV-B-Gone Firmware version 1.2
  for use with ATtiny85v and v1.2 hardware
  (c) Mitch Altman + Limor Fried 2009
  Last edits, August 16 2009
 
+With some code from:
+Kevin Timmerman & Damien Good 7-Dec-07
 
- I added universality for EU or NA,
- and Sleep mode to Ken's Arduino port
-      -- Mitch Altman  18-Oct-2010
- Thanks to ka1kjz for the code for adding Sleep
-      <http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/>
+------------------------------------------------------------
+CIRCUIT:
+------------------------------------------------------------
+-NB: SEE "main.h" TO VERIFY DEFINED PINS TO USE
+The hardware for this project uses an Arduino:
+ Connect an IR LED to pin 3 (IRLED).
+ Connect a visible LED to the pin 13 (or use the built-in LED in many Arduinos).
+ Connect a push-button between pin 2 (TRIGGER) and ground.
+ Pin 5 (REGIONSWITCH) must be left floating for North America, or wire it to ground to have it output European codes.
 
+------------------------------------------------------------
+LICENSE:
+------------------------------------------------------------
+Distributed under Creative Commons 2.5 -- Attribution & Share Alike
 
- With some code from:
- Kevin Timmerman & Damien Good 7-Dec-07
+*/
 
- Distributed under Creative Commons 2.5 -- Attib & Share Alike
-
- */
-
-#include "main.h"
+#include "WORLD_IR_CODES.h"
 #include <avr/sleep.h>
 
 void xmitCodeElement(uint16_t ontime, uint16_t offtime, uint8_t PWM_code );
@@ -43,6 +62,8 @@ uint8_t read_bits(uint8_t count);
 #define putstring(s) Serial.print(s)
 #define putnum_ud(n) Serial.print(n, DEC)
 #define putnum_uh(n) Serial.print(n, HEX)
+
+#define MAX_WAIT_TIME 65535 //tens of us (ie: 655.350ms)
 
 /*
 This project transmits a bunch of TV POWER codes, one right after the other,
@@ -75,8 +96,8 @@ This project transmits a bunch of TV POWER codes, one right after the other,
 This project is a good example of how to use the AVR chip timers.
  */
 
-extern PGM_P *NApowerCodes[] PROGMEM;
-extern PGM_P *EUpowerCodes[] PROGMEM;
+extern const IrCode* const NApowerCodes[] PROGMEM;
+extern const IrCode* const EUpowerCodes[] PROGMEM;
 extern uint8_t num_NAcodes, num_EUcodes;
 
 /* This function is the 'workhorse' of transmitting IR codes.
@@ -177,15 +198,14 @@ The C compiler creates code that will transfer all constants into RAM when
  const PGM_P time_ptr = (PGM_P)pgm_read_word(code_ptr);
  */
 
+#define BUTTON_PRESSED 0 
+
 uint16_t ontime, offtime;
-uint8_t i,num_codes, Loop;
+uint8_t i,num_codes;
 uint8_t region;
-uint8_t startOver;
 
-#define FALSE 0
-#define TRUE 1
-
-void setup()   {
+void setup()   
+{
   Serial.begin(9600);
 
   TCCR2A = 0;
@@ -193,16 +213,12 @@ void setup()   {
 
   digitalWrite(LED, LOW);
   digitalWrite(IRLED, LOW);
-  digitalWrite(DBG, LOW);     // debug
   pinMode(LED, OUTPUT);
   pinMode(IRLED, OUTPUT);
-  pinMode(DBG, OUTPUT);       // debug
-  pinMode(REGIONSWITCH, INPUT);
-  pinMode(TRIGGER, INPUT);
-  digitalWrite(REGIONSWITCH, HIGH); //Pull-up
-  digitalWrite(TRIGGER, HIGH);
+  pinMode(REGIONSWITCH, INPUT_PULLUP);
+  pinMode(TRIGGER, INPUT_PULLUP);
 
-  delay_ten_us(5000);            // Let everything settle for a bit
+  delay_ten_us(5000); //50ms (5000x10 us) delay: let everything settle for a bit
 
   // determine region
   if (digitalRead(REGIONSWITCH)) {
@@ -214,7 +230,7 @@ void setup()   {
     DEBUGP(putstring_nl("EU"));
   }
 
-  // Indicate how big our database is
+  // Debug output: indicate how big our database is
   DEBUGP(putstring("\n\rNA Codesize: ");
   putnum_ud(num_NAcodes);
   );
@@ -223,22 +239,17 @@ void setup()   {
   );
 
   // Tell the user what region we're in  - 3 flashes is NA, 6 is EU
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  quickflashLEDx(3);
-  if (region == EU) {
+  if (region == NA)
     quickflashLEDx(3);
-  }
+  else //region == EU
+    quickflashLEDx(6);
 }
 
-void sendAllCodes() {
-Start_transmission:
-  // startOver will become TRUE if the user pushes the Trigger button while transmitting the sequence of all codes
-  startOver = FALSE;
-
-  // determine region from REGIONSWITCH: 1 = NA, 0 = EU
+void sendAllCodes() 
+{
+  bool endingEarly = false; //will be set to true if the user presses the button during code-sending 
+      
+  // determine region from REGIONSWITCH: 1 = NA, 0 = EU (defined in main.h)
   if (digitalRead(REGIONSWITCH)) {
     region = NA;
     num_codes = num_NAcodes;
@@ -249,7 +260,8 @@ Start_transmission:
   }
 
   // for every POWER code in our collection
-  for (i=0 ; i < num_codes; i++) {
+  for (i=0 ; i<num_codes; i++) 
+  {
     PGM_P data_ptr;
 
     // print out the code # we are about to transmit
@@ -308,8 +320,8 @@ Start_transmission:
     // transmitting offTime means no output from the IR emitters for the
     // length of time specified in offTime
 
+//DEVELOPMENTAL TESTING: 
 #if 0
-
     // print out all of the pulse pairs
     for (uint8_t k=0; k<numpairs; k++) {
       uint8_t ti;
@@ -349,37 +361,44 @@ Start_transmission:
     //with a fresh set of 8 bits.
     bitsleft_r=0;
 
+    // visible indication that a code has been output.
+    quickflashLED();
+    
     // delay 205 milliseconds before transmitting next POWER code
     delay_ten_us(20500);
 
-    // visible indication that a code has been output.
-    quickflashLED();
-
-    // if user is pushing Trigger button, stop transmission
-    if (digitalRead(TRIGGER) == 0) {
-      startOver = TRUE;
-      break;
+    // if user is pushing (holding down) TRIGGER button, stop transmission early 
+    if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
+    {
+      endingEarly = true;
+      delay_ten_us(50000); //500ms delay 
+      quickflashLEDx(4);
+      //pause for ~1.3 sec to give the user time to release the button so that the code sequence won't immediately start again.
+      delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+      delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+      break; //exit the POWER code "for" loop
     }
+  } //end of POWER code for loop
+
+  if (endingEarly==false)
+  {
+    //pause for ~1.3 sec, then flash the visible LED 8 times to indicate that we're done
+    delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+    delay_ten_us(MAX_WAIT_TIME); // wait 655.350ms
+    quickflashLEDx(8);
   }
+} //end of sendAllCodes
 
-  if (startOver) goto Start_transmission;
-  while (Loop == 1);
-
-  // flash the visible LED on PB0  8 times to indicate that we're done
-  delay_ten_us(65500); // wait maxtime
-  delay_ten_us(65500); // wait maxtime
-  quickflashLEDx(8);
-
-}
-
-void loop() {
+void loop() 
+{
   sleepNow();
-  // if the user pushes the Trigger button and lets go, then start transmission of all POWER codes
-  if (digitalRead(TRIGGER) == 0) {
-    delay_ten_us(3000);  // delay 30ms
-    if (digitalRead(TRIGGER) == 1) {
-      sendAllCodes();
-    }
+  
+  //Super "ghetto" (but decent enough for this application) button debouncing:
+  //-if the user pushes the Trigger button, then wait a while to let the button stop bouncing, then start transmission of all POWER codes
+  if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
+  {
+    delay_ten_us(50000);  // delay 500ms to give the user time to release the button before the code sequence begins
+    sendAllCodes();
   }
 }
 
@@ -389,8 +408,11 @@ void loop() {
 
 // This function delays the specified number of 10 microseconds
 // it is 'hardcoded' and is calibrated by adjusting DELAY_CNT
-// in main.h Unless you are changing the crystal from 8mhz, dont
+// in main.h Unless you are changing the crystal from 8MHz, dont
 // mess with this.
+//-due to uint16_t datatype, max delay is 65535 tens of microseconds, or 655350 us, or 655.350 ms. 
+//-NB: DELAY_CNT has been increased in main.h from 11 to 25 (last I checked) in order to allow this function
+// to work properly with 16MHz Arduinos now (instead of 8MHz).
 void delay_ten_us(uint16_t us) {
   uint8_t timer;
   while (us != 0) {
@@ -410,7 +432,7 @@ void delay_ten_us(uint16_t us) {
 // This will indicate to the user that a code is being transmitted
 void quickflashLED( void ) {
   digitalWrite(LED, HIGH);
-  delay_ten_us(3000);   // 30 millisec delay
+  delay_ten_us(3000);   // 30 ms ON-time delay
   digitalWrite(LED, LOW);
 }
 
@@ -419,11 +441,10 @@ void quickflashLED( void ) {
 void quickflashLEDx( uint8_t x ) {
   quickflashLED();
   while(--x) {
-    delay_ten_us(15000);     // 150 millisec delay between flahes
+    delay_ten_us(25000);     // 250 ms OFF-time delay between flashes
     quickflashLED();
   }
 }
-
 
 
 

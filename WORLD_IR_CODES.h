@@ -9,10 +9,11 @@ TV-B-Gone Firmware version 1.2
  (c) Mitch Altman + Limor Fried 2009
 
 */
-#include "main.h"
 
 //Codes captured from Generation 3 TV-B-Gone by Limor Fried & Mitch Altman
-// table of POWER codes
+//table of POWER codes
+
+#include "main.h"
 
 const uint16_t code_na000Times[] PROGMEM = {
   60, 60,
@@ -8502,8 +8503,11 @@ const struct IrCode code_eu139Code PROGMEM = {
 
 ////////////////////////////////////////////////////////////////
 
-
-const struct IrCode *NApowerCodes[] PROGMEM = {
+//const PROGMEM array (called "NApowerCodes") of const pointers to IrCode structs
+//-otherwise stated: "declare NApowerCodes as PROGMEM array of const pointers to const IrCode structs"
+//-to confirm this, go to http://cdecl.org/ and paste "const int* const NApowerCodes[]", and you'll 
+// see it means "declare NApowerCodes as array of const pointer to const int"
+const IrCode* const NApowerCodes[] PROGMEM = {
   &code_na000Code,
   &code_na001Code,
   &code_na002Code,
@@ -8643,7 +8647,7 @@ const struct IrCode *NApowerCodes[] PROGMEM = {
   &code_na136Code,
 };
 
-const struct IrCode *EUpowerCodes[] PROGMEM = {
+const IrCode* const EUpowerCodes[] PROGMEM = {
   &code_eu000Code,
   &code_eu001Code,
   &code_eu002Code,
