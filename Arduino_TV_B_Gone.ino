@@ -3,19 +3,20 @@ Last Updated: 22 Oct. 2016
 By Gabriel Staples, http://www.ElectricRCAircraftGuy.com 
 -My contact info is available by clicking the "Contact Me" tab at the top of my website.
 
+------------------------------------------------------------
+Semver (http://semver.org/) VERSION HISTORY (newest on top):
+(date format: yyyymmdd; ex: 20161022 is 22 Oct. 2016)
+------------------------------------------------------------
+-20161022 - v1.3 - Semver versioning implemented; various code updates, clarifications, & comment additions, and changes to fix PROGMEM incompatibilities so it will now compile with latest versions of gcc compiler; also implemented a few new blink indicator routines//////////; by Gabriel Staples (http://www.ElectricRCAircraftGuy.com)
+-20101023 - v1.2 - Latest version posted by Ken Shirriff on his website here (http://www.righto.com/2010/11/improved-arduino-tv-b-gone.html) (direct download link here: http://arcfn.com/files/arduino-tv-b-gone-1.2.zip)
+-20101018 - v1.2 - Universality for EU (European Union) & NA (North America) added by Mitch Altman; sleep mode added by ka1kjz
+-2010____ - v1.2 - code ported to Arduino; by Ken Shirriff 
+-20090816 - v1.2 - for ATtiny85v, by Mitch Altman & Limor Fried (https://www.adafruit.com/), w/some code by Kevin Timmerman & Damien Good  
+
 TV-B-Gone for Arduino version 1.2, Oct 23 2010
 Ported to Arduino by Ken Shirriff
-See here: http://www.arcfn.com/2009/12/tv-b-gone-for-arduino.html
+See here: http://www.arcfn.com/2009/12/tv-b-gone-for-arduino.html and here: http://www.righto.com/2010/11/improved-arduino-tv-b-gone.html (newer)
 
-Circuit:
--NB: SEE "main.h" TO VERIFY DEFINED PINS TO USE
-The hardware for this project uses an Arduino:
- Connect an IR LED to pin 3 (IRLED).
- Connect a visible LED to the pin 13 (or use the built-in LED in many Arduinos).
- Connect a pushbutton between pin 2 (TRIGGER) and ground.
- Pin 5 (REGIONSWITCH) must be left floating for North America, or wired to ground for Europe.
- Pin 12 is a debug pin (DBG)
- 
 I added universality for EU (European Union) or NA (North America),
 and Sleep mode to Ken's Arduino port
  -- Mitch Altman  18-Oct-2010
@@ -31,7 +32,19 @@ TV-B-Gone Firmware version 1.2
 With some code from:
 Kevin Timmerman & Damien Good 7-Dec-07
 
+------------------------------------------------------------
+CIRCUIT:
+------------------------------------------------------------
+-NB: SEE "main.h" TO VERIFY DEFINED PINS TO USE
+The hardware for this project uses an Arduino:
+ Connect an IR LED to pin 3 (IRLED).
+ Connect a visible LED to the pin 13 (or use the built-in LED in many Arduinos).
+ Connect a push-button between pin 2 (TRIGGER) and ground.
+ Pin 5 (REGIONSWITCH) must be left floating for North America, or wire it to ground to have it output European codes.
+
+------------------------------------------------------------
 LICENSE:
+------------------------------------------------------------
 Distributed under Creative Commons 2.5 -- Attribution & Share Alike
 
 */
@@ -81,8 +94,8 @@ This project transmits a bunch of TV POWER codes, one right after the other,
 This project is a good example of how to use the AVR chip timers.
  */
 
-extern const PGM_P * const NApowerCodes[] PROGMEM;
-extern const PGM_P * const EUpowerCodes[] PROGMEM;
+extern const IrCode* const NApowerCodes[] PROGMEM;
+extern const IrCode* const EUpowerCodes[] PROGMEM;
 extern uint8_t num_NAcodes, num_EUcodes;
 
 /* This function is the 'workhorse' of transmitting IR codes.
@@ -199,10 +212,8 @@ void setup()   {
 
   digitalWrite(LED, LOW);
   digitalWrite(IRLED, LOW);
-  digitalWrite(DBG, LOW);     // debug
   pinMode(LED, OUTPUT);
   pinMode(IRLED, OUTPUT);
-  pinMode(DBG, OUTPUT);       // debug
   pinMode(REGIONSWITCH, INPUT_PULLUP);
   pinMode(TRIGGER, INPUT_PULLUP);
 
@@ -232,10 +243,10 @@ void setup()   {
   delay_ten_us(65500); // wait maxtime
   delay_ten_us(65500); // wait maxtime
   
-  quickflashLEDx(3);
-  if (region == EU) {
+  if (region == NA)
     quickflashLEDx(3);
-  }
+  else //region == EU
+    quickflashLEDx(6);
 }
 
 void sendAllCodes() {
@@ -314,8 +325,8 @@ Start_transmission:
     // transmitting offTime means no output from the IR emitters for the
     // length of time specified in offTime
 
+//DEV TESTING: 
 #if 0
-
     // print out all of the pulse pairs
     for (uint8_t k=0; k<numpairs; k++) {
       uint8_t ti;
@@ -355,15 +366,17 @@ Start_transmission:
     //with a fresh set of 8 bits.
     bitsleft_r=0;
 
-    // delay 205 milliseconds before transmitting next POWER code
-    delay_ten_us(20500);
-
     // visible indication that a code has been output.
     quickflashLED();
+    
+    // delay 205 milliseconds before transmitting next POWER code
+    delay_ten_us(20500);
 
     // if user is pushing (holding down) Trigger button, stop transmission & start over at the 1st code again
     if (digitalRead(TRIGGER) == 0) {
       startOver = TRUE;
+      delay_ten_us(50000); //500ms delay 
+      quickflashLEDx(4);
       break; //exit the POWER code for loop
     }
   } //end of POWER code for loop
