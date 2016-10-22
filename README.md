@@ -22,7 +22,7 @@ For background details on the Arduino port, how to build it, and how to use it, 
  * http://www.righto.com/2010/11/improved-arduino-tv-b-gone.html (newer)
 
 For information on the original TV-B-Gone see:  
-http://www.tvbgone.com/cfe_tvbg_main.php  
+http://www.tvbgone.com/. Mitch Altman is the inventor of the original TV-B-Gone.    
 
 The original code is:  
 TV-B-Gone Firmware version 1.2  
@@ -30,25 +30,24 @@ TV-B-Gone Firmware version 1.2
  (c) Mitch Altman + Limor Fried 2009  
  Last edits, August 16 2009  
 
-Added universality for EU or NA,
-and Sleep mode to Ken's Arduino port
- -- Mitch Altman  18-Oct-2010
-Thanks to ka1kjz for the code for adding Sleep
-    <http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/>
+Added universality for EU or NA, and Sleep mode to Ken's Arduino port.  
+ -- Mitch Altman  18-Oct-2010  
+Thanks to ka1kjz for the code for adding Sleep  
+    <http://www.ka1kjz.com/561/adding-sleep-to-tv-b-gone-code/>  
 
-With some code from:
-Kevin Timmerman & Damien Good 7-Dec-07
+With some code from:  
+Kevin Timmerman & Damien Good 7-Dec-07  
 
 # License:  
-Distributed under Creative Commons 2.5 -- Attribution & Share Alike
+Distributed under Creative Commons 2.5 -- Attribution & Share Alike  
 
 # CIRCUIT:  
 -NB: SEE "main.h" TO VERIFY DEFINED PINS TO USE  
 The hardware for this project uses an Arduino:  
- Connect an IR LED to pin 3 (IRLED).  
- Connect a visible LED to the pin 13 (or use the built-in LED in many Arduinos).  
- Connect a push-button between pin 2 (TRIGGER) and ground.  
- Pin 5 (REGIONSWITCH) must be left floating for North America, or wire it to ground to have it output European codes.  
+ * Connect an IR LED to pin 3 (IRLED).  
+ * Connect a visible LED to the pin 13 (or use the built-in LED in many Arduinos).  
+ * Connect a push-button between pin 2 (TRIGGER) and ground.  
+ * Pin 5 (REGIONSWITCH) must be left floating for North America, or wire it to ground to have it output European codes.  
 
 # User Manual:  
 ## Background Settings:  
@@ -61,12 +60,15 @@ The hardware for this project uses an Arduino:
   * Fine-tune if necessary  
  * All IR codes are defined in "WORLD_IR_CODES.h"  
   * We'd love to have you add more! Just be careful NOT to duplicate codes please!  
+  
 ## Use:  
- * When the device is first powered on, it will quick-flash (30ms on followed by 150ms off) 3 times if set to output NA (North America) codes, or 6 times for EU (European Union) codes. See the end of the "setup()" function.
- * Once on, the device will enter sleep mode, where it will remain until a button press occurs on the TRIGGER pin, at which point it will wake up and send all of its power codes for the region set according to the state of the REGIONSWITCH pin.
- * Once you press the TRIGGER button (on pin 2), all power codes will be sent sequentially, one after the other. Note that the trigger button debouncing is done in a very primitive fashion, so quick button presses and releases (<200ms) may work best. 
+ * When the device is first powered on, it will quick-flash (30ms on followed by 150ms off) 3 times if set to output NA (North America) codes, or 6 times for EU (European Union) codes. See the end of the "setup()" function.  
+ * Once on, the device will enter sleep mode, where it will remain until a button press occurs on the TRIGGER pin, at which point it will wake up and send all of its power codes for the region set according to the state of the REGIONSWITCH pin.  
+ * Once you press the TRIGGER button (on pin 2), all power codes will be sent sequentially, one after the other. Note that the trigger button debouncing is done in a very primitive fashion, so quick button presses and releases (<200ms) may work best.  
  * Once all codes have been sent (may take around a minute or so), 8 quick flashes will occur to indicate that all power codes have been sent, then the device will go back into sleep mode until another TRIGGER button press occurs.  
- * Between individual power codes, the TRIGGER button is read one time. If it is read as pressed (LOW), it will restart the power code sequence from the beginning. This will be indicated by a ~705ms delay followed by 4 quick-flashes. Since the TRIGGER button is only read between individual codes, rather than continuously, you may need to hold down the button for a half-second to second or so for it to be read properly as pressed. Once the delay and 4 quick-flashes begin, you can release the button. The power codes will restart.
+ * Between individual power codes, the TRIGGER button is read one time. If it is read as pressed (LOW), it will restart the power code sequence from the beginning. This will be indicated by a ~705ms delay followed by 4 quick-flashes. Since the TRIGGER button is only read between individual codes, rather than continuously, you may need to hold down the button for a half-second to second or so for it to be read properly as pressed. Once the delay and 4 quick-flashes begin, you can release the button. The power codes will restart. If you hold the button down, it will simply continually restart the power codes, as indicated by the long pause followed by 4 quick-flashes, continuously repeated. 
+ * To stop the power code sequence once it is started, you must disconnect power to your device. 
+  * If you'd like a more sophisticated way to stop it, I can add proper button debouncing via my [eRCaGuy_ButtonReader](https://github.com/ElectricRCAircraftGuy/eRCaGuy_ButtonReader) library, then allow pressing the button to restart 
 
 
 

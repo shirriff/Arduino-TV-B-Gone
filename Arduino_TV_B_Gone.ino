@@ -196,13 +196,14 @@ The C compiler creates code that will transfer all constants into RAM when
  const PGM_P time_ptr = (PGM_P)pgm_read_word(code_ptr);
  */
 
+#define FALSE 0
+#define TRUE 1
+#define BUTTON_PRESSED 0 
+
 uint16_t ontime, offtime;
 uint8_t i,num_codes;
 uint8_t region;
-uint8_t startOver;
-
-#define FALSE 0
-#define TRUE 1
+bool startOver = FALSE;
 
 void setup()   {
   Serial.begin(9600);
@@ -251,8 +252,6 @@ void setup()   {
 
 void sendAllCodes() {
 Start_transmission:
-  // startOver will become TRUE if the user pushes the Trigger button while transmitting the sequence of all codes
-  startOver = FALSE;
 
   // determine region from REGIONSWITCH: 1 = NA, 0 = EU (defined in main.h)
   if (digitalRead(REGIONSWITCH)) {
@@ -372,18 +371,31 @@ Start_transmission:
     // delay 205 milliseconds before transmitting next POWER code
     delay_ten_us(20500);
 
-    // if user is pushing (holding down) Trigger button, stop transmission & start over at the 1st code again
-    if (digitalRead(TRIGGER) == 0) {
-      startOver = TRUE;
-      delay_ten_us(50000); //500ms delay 
-      quickflashLEDx(4);
-      break; //exit the POWER code for loop
+    // if user is pushing (holding down) TRIGGER button, stop transmission & start over at the 1st code again
+    // -if user is holding down the TRIGGER button for an extended period of time, stop the code-sending sequence entirely
+    if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
+    {
+      if (startOver==TRUE) 
+      {
+        //if startOver was already TRUE, it means the button has been pressed for 2 cycles in a row, so let's stop 
+        startOver = FALSE; //update 
+        break; //exit the POWER code "for" loop
+      }
+      else //startOver==FALSE, so let's start over now 
+      {
+        startOver = TRUE;
+        delay_ten_us(50000); //500ms delay 
+        quickflashLEDx(4);
+        break; //exit the POWER code "for" loop
+      }
     }
   } //end of POWER code for loop
 
-  if (startOver) goto Start_transmission;
+  if (startOver) 
+    goto Start_transmission;
 
-  // flash the visible LED on PB0  8 times to indicate that we're done
+  //Otherwise, we are done (either because we were stopped early, or because we finished all the codes)
+  //-so, flash the visible LED 8 times to indicate that we're done
   delay_ten_us(65500); // wait maxtime
   delay_ten_us(65500); // wait maxtime
   quickflashLEDx(8);
@@ -393,14 +405,11 @@ void loop() {
   sleepNow();
   
   //Super "ghetto" (but decent enough for this application) button debouncing:
-  //-if the user pushes the Trigger button and lets go, then start transmission of all POWER codes
-  if (digitalRead(TRIGGER) == LOW) 
+  //-if the user pushes the Trigger button, then wait a while to let the button stop bouncing, then start transmission of all POWER codes
+  if (digitalRead(TRIGGER) == BUTTON_PRESSED) 
   {
-    delay_ten_us(20000);  // delay 200ms
-    if (digitalRead(TRIGGER) == HIGH) 
-    {
-      sendAllCodes();
-    }
+    delay_ten_us(25000);  // delay 250ms
+    sendAllCodes();
   }
 }
 
@@ -434,7 +443,7 @@ void delay_ten_us(uint16_t us) {
 // This will indicate to the user that a code is being transmitted
 void quickflashLED( void ) {
   digitalWrite(LED, HIGH);
-  delay_ten_us(3000);   // 30 millisec delay
+  delay_ten_us(3000);   // 30 ms ON-time delay
   digitalWrite(LED, LOW);
 }
 
@@ -443,7 +452,7 @@ void quickflashLED( void ) {
 void quickflashLEDx( uint8_t x ) {
   quickflashLED();
   while(--x) {
-    delay_ten_us(15000);     // 150 millisec delay between flahes
+    delay_ten_us(25000);     // 250 ms OFF-time delay between flashes
     quickflashLED();
   }
 }
